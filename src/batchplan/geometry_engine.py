@@ -1,16 +1,13 @@
-# geometry_engine.py
 """
-Abstraction layer for geometry operations to replace pythonocc-core dependency
+Abstraction layer for geometry operations
 """
 
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Optional, Union
 import numpy as np
-from shapely.geometry import Polygon, Point, LineString, MultiPolygon
+from shapely.geometry import Polygon, MultiPolygon
 from shapely.ops import unary_union
 import trimesh
-from trimesh.path import Path2D
-from trimesh.path.path import Path3D
 
 
 class GeometryEngine(ABC):
@@ -290,8 +287,14 @@ class IFCGeometryProcessor:
             
             return mesh
             
+        except RuntimeError as e:
+            if "Failed to process shape" in str(e):
+                # Skip problematic elements and continue
+                print(f"Skipping element {getattr(ifc_element, 'GlobalId', 'Unknown')}: {e}")
+                return None
+            raise  # Re-raise other RuntimeErrors
         except Exception as e:
-            print(f"Warning: Failed to process IFC element {ifc_element}: {e}")
+            print(f"Warning: Failed to process IFC element {getattr(ifc_element, 'GlobalId', 'Unknown')}: {e}")
             return None
     
     def extract_floor_plan_at_height(self, ifc_elements, ifc_file, height: float, 
